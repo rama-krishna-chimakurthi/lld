@@ -897,3 +897,205 @@ public class MacBook {
     }
 }
 ```
+
+# Strategy Pattern
+
+## Basic UML
+
+```mermaid
+classDiagram
+    class Context{
+        +strategy: Strategy
+        +performOperation()
+    }
+    class Strategy{
+        <<Interface>>
+        +execute()
+    }
+    class ConcreteStrategyA{
+
+    }
+    class ConcreteStrategyB{
+
+    }
+
+    Context --> Strategy : has-a
+    Strategy <|-- ConcreteStrategyA : is-a
+    Strategy <|-- ConcreteStrategyB : is-a
+```
+
+## Problem
+
+[Vehicle.java](./src/main/java/com/rk/behavioralpatterns/strategy/vehicledrivemodes/problem/Vehicle.java)
+
+```java
+public class Vehicle {
+
+    public void drive() {
+        System.out.print("\n" + this.getClass().getSimpleName() + ": ");
+        System.out.println("Driving Capability: Normal");
+    }
+}
+```
+
+[OffRoadVehicle.java](./src/main/java/com/rk/behavioralpatterns/strategy/vehicledrivemodes/problem/OffRoadVehicle.java)
+
+```java
+public class OffRoadVehicle extends Vehicle {
+
+    // Overriding the drive method to provide specific behavior
+    public void drive() {
+        System.out.print("\n" + this.getClass().getSimpleName() + ": ");
+        System.out.println("Driving Capability: Sports"); // code duplication
+        // As sports drive mode is not available in the parent class, we need to
+        // override it and implement
+        // the specific behavior for all new vehicle types that require sports drive
+        // mode
+    }
+
+}
+```
+
+[SportsVehicle.java](./src/main/java/com/rk/behavioralpatterns/strategy/vehicledrivemodes/problem/SportsVehicle.java)
+
+```java
+public class SportsVehicle extends Vehicle {
+
+    // Overriding the drive method to provide specific behavior for sports vehicles
+    public void drive() {
+        System.out.print("\n" + this.getClass().getSimpleName() + ": ");
+        System.out.println("Driving Capability: Sports");
+    }
+}
+```
+
+[PassengerVehicle.java](./src/main/java/com/rk/behavioralpatterns/strategy/vehicledrivemodes/problem/PassengerVehicle.java)
+
+```java
+public class PassengerVehicle extends Vehicle {
+
+    // Reusing the existing drive method from the parent class
+    // Driving Capability: Normal
+    // No new implementation required
+}
+```
+
+### Issues
+
+- **Code duplication** in OffRoadVehicle and SportsVehicle
+- **Tight coupling** between drive mode and vehicles
+
+## Solution
+
+```mermaid
+classDiagram
+    class Vehicle{
+        <<Interface>>
+        +driveStrategy : DriveStrategy
+        +drive()
+    }
+    class DriveStrategy{
+        <<Interface>>
+        +drive()
+    }
+    class SportsDrive{
+        +drive() @Override
+    }
+    class NormalDrive{
+        +drive() @Override
+    }
+    class OffRoadVehicle{
+
+    }
+    class NormalVehicle{
+
+    }
+
+    Vehicle --> DriveStrategy : has-a
+    DriveStrategy <|-- SportsDrive : is-a
+    DriveStrategy <|-- NormalDrive : is-a
+
+    Vehicle <|-- OffRoadVehicle : is-a
+    Vehicle <|-- NormalVehicle : is-a
+
+```
+
+### Context
+
+[Vehicle.java](./src/main/java/com/rk/behavioralpatterns/strategy/vehicledrivemodes/solution/context/Vehicle.java)
+
+```java
+// Context class - holds a reference to a strategy object
+public class Vehicle {
+    DriveStrategy driveStrategy;
+
+    // constructor injection
+    public Vehicle(DriveStrategy driveStrategy) {
+        this.driveStrategy = driveStrategy;
+    }
+
+    public void drive() {
+        System.out.print("\n" + this.getClass().getSimpleName() + ": ");
+        driveStrategy.drive();
+    }
+}
+```
+
+[SportsVehicle.java](./src/main/java/com/rk/behavioralpatterns/strategy/vehicledrivemodes/solution/context/SportsVehicle.java)
+
+```java
+// Concrete context subclass
+public class SportsVehicle extends Vehicle {
+
+    public SportsVehicle(DriveStrategy driveStrategy) {
+        super(driveStrategy);
+    }
+}
+```
+
+[GoodsVehicle.java](./src/main/java/com/rk/behavioralpatterns/strategy/vehicledrivemodes/solution/context/GoodsVehicle.java)
+
+```java
+// Concrete context subclass
+public class GoodsVehicle extends Vehicle {
+
+    public GoodsVehicle(DriveStrategy driveStrategy) {
+        super(driveStrategy);
+    }
+}
+```
+
+### Strategy
+
+[DriveStrategy.java](./src/main/java/com/rk/behavioralpatterns/strategy/vehicledrivemodes/solution/strategies/DriveStrategy.java)
+
+```java
+// Strategy interface - defines the contract for drive behavior
+public interface DriveStrategy {
+    public void drive();
+}
+```
+
+[NormalDrive.java](./src/main/java/com/rk/behavioralpatterns/strategy/vehicledrivemodes/solution/strategies/NormalDrive.java)
+
+```java
+// Concrete strategy for normal drive mode
+public class NormalDrive implements DriveStrategy {
+    @Override
+    public void drive() {
+        System.out.println("Driving Capability: Normal");
+    }
+}
+```
+
+[SportsDrive.java](./src/main/java/com/rk/behavioralpatterns/strategy/vehicledrivemodes/solution/strategies/SportsDrive.java)
+
+```java
+// Concrete strategy for sports drive mode
+public class SportsDrive implements DriveStrategy {
+    @Override
+    public void drive() {
+        System.out.println("Driving Capability: Sports");
+    }
+}
+```
