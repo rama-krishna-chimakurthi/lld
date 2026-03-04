@@ -1,4 +1,4 @@
-package com.rk.solid.singleresponsibility.problem;
+package com.rk.solid.singleresponsibility.violation;
 
 public class Marker {
     String name;

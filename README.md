@@ -30,7 +30,7 @@ flowchart TD
 - Focus on, how different classes and objects are **arranged** together to solve a bigger problem
 - Provides skeleton
 
-### Example
+## Example
 
 - To build a car, we have multiple classes
   - Wheel
@@ -38,7 +38,7 @@ flowchart TD
   - Engine
 - How these classes or arranged to build the car
 
-### Types
+## Types
 
 - Decorator
 - Proxy
@@ -53,7 +53,7 @@ flowchart TD
 - Focus on, How different classes **interact** with each other
 - Provides interaction, co-ordination and responsibility of the skeleton
 
-### Types
+## Types
 
 - State
 - Strategy
@@ -294,3 +294,606 @@ public class InvoicePrinter {
 - Better Maintainability
 - Better testing
 - Enhanced Reusability
+
+## Open Close Principle
+
+> Class should be open for extension and closed for modification
+
+- Means that new functionality can be added through inheritance rather than modifying the existing code
+
+### Violation
+
+InvoiceDaoOld.java
+
+```java
+public class InvoiceDaoOld {
+
+    Invoice invoice;
+
+    public InvoiceDaoOld(Invoice invoice) {
+        this.invoice = invoice;
+    }
+
+    public void saveToDB() {
+        // Save into the DB the invoice
+        System.out.println("Saving to DB...");
+    }
+}
+```
+
+InvoiceDao.java
+
+```java
+public class InvoiceDao {
+
+    Invoice invoice;
+
+    public InvoiceDao(Invoice invoice) {
+        this.invoice = invoice;
+    }
+
+    public void saveToDB() {
+        // Save into the DB the invoice
+        System.out.println("Saving to DB...");
+    }
+
+    // BAD: This design violates OCP
+    // Every time we add a new save function, we need to modify existing InvoiceDao class
+    public void saveToFile() {
+        // Save into the file
+        System.out.println("Saving to file...");
+    }
+}
+```
+
+**Problems with above code**
+
+- **Modification:** Every time we add a new way to save invoice, we need to modify the `InvoiceDao` class
+- **Risk of Breaking Things:** New changes might introduce bugs
+- **Testing Issues:** Need to test complete functionality
+
+### Solution
+
+```mermaid
+classDiagram
+    class InvoiceDao{
+        <<Interface>>
+    }
+
+    InvoiceDao <|-- DBInvoiceDao
+    InvoiceDao <|-- FileInvoiceDao
+    InvoiceDao <|-- NoSQLInvoiceDao
+```
+
+```java
+// GOOD: Following OCP using interfaces and polymorphism
+public interface InvoiceDao {
+    void save();
+}
+```
+
+FileInvoiceDao.java
+
+```java
+// Concrete implementation for FileInvoiceDao
+// NEW File Save Operation: An extension without modification!
+public class FileInvoiceDao implements InvoiceDao {
+
+    Invoice invoice;
+
+    public FileInvoiceDao(Invoice invoice) {
+        // set the invoice
+        this.invoice = invoice;
+    }
+
+    @Override
+    public void save() {
+        // Save into the file the invoice
+        System.out.println("Saving to file...");
+    }
+}
+```
+
+DatabaseInvoiceDao.java
+
+```java
+// Concrete implementation for DatabaseInvoiceDao
+public class DatabaseInvoiceDao implements InvoiceDao {
+    Invoice invoice;
+
+    public DatabaseInvoiceDao(Invoice invoice) {
+        // set the invoice
+        this.invoice = invoice;
+    }
+
+    @Override
+    public void save() {
+        // Save into the DB the invoice
+        System.out.println("Saving to DB...");
+    }
+}
+```
+
+**Benifits**
+
+- Reduced risk
+- Better maintainability
+- Flexibility
+
+## Liskov Substitution Principle
+
+> Object of superclass should be replaceable with object of subclass without breaking the functionality
+
+- If Class B is a subclass of Class A, then Object of Class A should be replaceable with Object of Class B without breaking code
+- Subclass should extend the capability not narrowing
+
+### Violation
+
+```mermaid
+classDiagram
+    class Bike{
+        <<Interface>>
+        void turnOnEngine()
+        void turnOffEngine()
+        void accelerate()
+        void applyBreaks()
+    }
+    class MotorCycle{
+        String company
+        int speed
+        boolean isEngineOn
+
+        void turnOnEngine()
+        void turnOffEngine()
+        void accelerate()
+        void applyBreaks()
+    }
+    class Bicycle{
+        String brand
+        int speed
+        boolean hasGears
+
+        void turnOnEngine()
+        void turnOffEngine()
+        void accelerate()
+        void applyBreaks()
+    }
+
+    Bike <|-- MotorCycle
+    Bike <|-- Bicycle
+
+```
+
+Bike.java
+
+```java
+// BAD: This design violates LSP
+public interface Bike {
+    void turnOnEngine();
+    void turnOffEngine();
+    void accelerate();
+    void applyBrakes();
+}
+```
+
+MotorCycle.java
+
+```java
+// Subclass of Bike - implements all Bike class behavior
+public class MotorCycle implements Bike {
+    String company;
+    boolean isEngineOn;
+    int speed;
+
+    public MotorCycle(String company, int speed) {
+        this.company = company;
+        this.speed = speed;
+    }
+
+    @Override
+    public void turnOnEngine() {
+        this.isEngineOn = true; // turn on the engine!
+        System.out.println("Engine is ON!");
+    }
+
+    @Override
+    public void turnOffEngine() {
+        this.isEngineOn = false; // turn off the engine!
+        System.out.println("Engine is OFF!");
+    }
+
+    @Override
+    public void accelerate() {
+        this.speed = this.speed + 10; // increase the speed
+        System.out.println("MotorCycle Speed: " + this.speed);
+    }
+
+    @Override
+    public void applyBrakes() {
+        this.speed = this.speed - 5; // decrease the speed
+        System.out.println("MotorCycle Speed: " + this.speed);
+    }
+}
+```
+
+Bicycle.java
+
+```java
+// This class violates LSP!
+public class Bicycle implements Bike {
+    String brand;
+    Boolean hasGears;
+    int speed;
+
+    public Bicycle(String brand, Boolean hasGears, int speed) {
+        this.brand = brand;
+        this.hasGears = hasGears;
+        this.speed = speed;
+    }
+
+    // LSP Violation: Strengthening preconditions
+    // Bicycle changes the behavior of turnOnEngine
+    @Override
+    public void turnOnEngine() {
+        throw new AssertionError("Detail Message: Bicycle has no engine!");
+    }
+
+    // Bicycle changes the behavior of turnOffEngine
+    @Override
+    public void turnOffEngine() {
+        throw new AssertionError("Detail Message: Bicycle has no engine!");
+    }
+
+    @Override
+    public void accelerate() {
+        this.speed = this.speed + 10; // increase the speed
+        System.out.println("Bicycle Speed: " + this.speed);
+    }
+
+    @Override
+    public void applyBrakes() {
+        this.speed = this.speed - 5; // decrease the speed
+        System.out.println("Bicycle Speed: " + this.speed);
+    }
+
+}
+```
+
+```java
+// Usage example - demonstrates the LSP violations
+public class Demo {
+    public static void main(String[] args) {
+        // create the objects
+        MotorCycle motorCycle = new MotorCycle("HeroHonda", 10);
+        Bicycle bicycle = new Bicycle("Hercules", true, 10);
+
+        // use the objects
+        // Works fine with MotorCycle - implements all Bike class behavior
+        motorCycle.turnOnEngine();
+        motorCycle.accelerate();
+        motorCycle.applyBrakes();
+        motorCycle.turnOffEngine();
+        // Client expects to be able to see the same behavior with Bicycle
+        bicycle.turnOnEngine(); // fails to implement Bike class behavior
+        bicycle.accelerate();
+        bicycle.applyBrakes();
+        bicycle.turnOffEngine(); // fails to implement Bike class behavior
+    }
+}
+```
+
+**Example 2**
+
+```java
+// Usage example - Violation of Liskov Substitution
+public class ViolationDemo {
+    public static void main(String[] args) {
+        // Happy Flow
+        List<Vehicle> vehicleList = new ArrayList<>();
+        vehicleList.add(new MotorCycle());
+        vehicleList.add(new Car());
+        for (Vehicle vehicle : vehicleList) {
+            System.out.println(vehicle.hasEngine().toString());
+        }
+        // Add Bicycle - Violation of LSP
+        List<Vehicle> vehicleList2 = new ArrayList<>();
+        vehicleList2.add(new MotorCycle());
+        vehicleList2.add(new Car());
+        vehicleList2.add(new Bicycle());
+        for (Vehicle vehicle : vehicleList2) {
+            System.out.println(vehicle.hasEngine().toString()); // throws NPE
+            // Client code will break for Bicycle
+        }
+    }
+}
+```
+
+### Solution
+
+```mermaid
+classDiagram
+    class Bike{
+        <<Interface>>
+        accelerate()
+        applyBreaks()
+    }
+    class Engine{
+        <<Interface>>
+        turnOnEngine()
+        turnOffEngine()
+    }
+    class MotorCycle{
+        accelerate()
+        applyBreaks()
+        turnOnEngine()
+        turnOffEngine()
+    }
+    class Bicycle{
+        accelerate()
+        applyBreaks()
+    }
+
+    Engine <|-- MotorCycle
+    Bike <|-- MotorCycle
+    Bike <|-- Bicycle
+```
+
+## Interface Segregation Principle
+
+> Interface should be such that client should not implement unnecessary function that they do not need
+
+### Violation
+
+```mermaid
+classDiagram
+    class RestaurantEmployee{
+        <<Interface>>
+        prepareFood()
+        decideMenu()
+        serveFood()
+        takeOrder()
+        cleanKitchen()
+    }
+    class Waiter{
+        takeOrder()
+        serveFood()
+
+        prepareFood() throws Error
+        decideMenu() throws Error
+        cleanKitchen() throws Error
+    }
+    RestaurantEmployee <|-- Waiter
+```
+
+[RestaurantEmployee.java](./src/main/java/com/rk/video1solid/interfacesegregation/violation/RestaurantEmployee.java)
+
+```java
+package com.rk.video1solid.interfacesegregation.violation;
+
+// BAD: This class violates ISP
+// This is a fat interface
+// One large interface forcing all implementers to define unused methods
+public interface RestaurantEmployee {
+
+    void prepareFood();
+
+    void decideMenu();
+
+    void serveFoodAndDrinks();
+
+    void takeOrder();
+
+    void cleanTheKitchen();
+}
+```
+
+[Waiter.java](./src/main/java/com/rk/video1solid/interfacesegregation/violation/Waiter.java)
+
+```java
+// BAD: This class violates ISP(clients shouldn't depend on unused interfaces)
+// Bloated class with empty or error-throwing methods
+// This Waiter is forced to implement methods it doesn't need
+public class Waiter implements RestaurantEmployee {
+    @Override
+    public void takeOrder() {
+        System.out.println("Taking order...");
+    }
+
+    @Override
+    public void serveFoodAndDrinks() {
+        System.out.println("Serving food and drinks...");
+    }
+
+    @Override
+    public void cleanTheKitchen() {
+        // Forced to implement but doesn't make sense for a waiter
+        throw new AssertionError("Detail Message: Waiter cannot clean the kitchen!");
+    }
+
+    @Override
+    public void prepareFood() {
+        // Forced to implement but doesn't make sense for a waiter
+        throw new AssertionError("Detail Message: Waiter cannot prepare food!");
+    }
+
+    @Override
+    public void decideMenu() {
+        // Forced to implement but doesn't make sense for a waiter
+        throw new AssertionError("Detail Message: Waiter cannot decide the menu!");
+    }
+}
+```
+
+- Here Waiter unnecessarly implements functions that it does not need
+
+### Solution
+
+```mermaid
+classDiagram
+    class ChefTasks{
+        <<Interface>>
+        prepareFood();
+        decideMenu();
+    }
+    class WaiterTasks{
+        <<Interface>>
+        serveFoodAndDrinks();
+        takeOrder();
+    }
+    class MaintainanceTasks{
+        <<Interface>>
+        cleanKitchen()
+    }
+
+    ChefTasks <|-- Chef
+    WaiterTasks <|-- Waiter
+```
+
+**Benefits**
+
+- Each class implements features it needs
+- No forced implementation
+- cleaner code
+
+## Dependency Injection Principle
+
+> High Level component should not depend on Low level component, instead they should depend on abstraction
+
+Lets say we have these utilities
+
+```mermaid
+classDiagram
+    class KeyBoard{
+        <<Interface>>
+        getSpecs()
+    }
+    class WiredKeyBoard{
+    }
+    class BluetoothKeyBoard{
+    }
+
+    KeyBoard <|-- WiredKeyBoard
+    KeyBoard <|-- BluetoothKeyBoard
+```
+
+[KeyBoard.java](./src/main/java/com/rk/video1solid/dependencyinversion/utility/Keyboard.java)
+
+```java
+public interface Keyboard {
+    void getSpecifications();
+}
+```
+
+[WiredKeyBoard.java](./src/main/java/com/rk/video1solid/dependencyinversion/utility/WiredKeyboard.java)
+
+```java
+// Low-level module - concrete implementation
+public class WiredKeyboard implements Keyboard {
+    private final String connectionType;
+    private final String company;
+    private final String modelVersion;
+    private final String color;
+
+    public WiredKeyboard(String connectionType, String company, String modelVersion, String color) {
+        this.connectionType = connectionType;
+        this.company = company;
+        this.modelVersion = modelVersion;
+        this.color = color;
+    }
+
+    public void getSpecifications() {
+        System.out.println("===> Wired Keyboard");
+        System.out.println("Connection Type: " + connectionType);
+        System.out.println("Company: " + company);
+        System.out.println("Model Version: " + modelVersion);
+        System.out.println("Color: " + color);
+    }
+}
+```
+
+[BluetoothKeyBoard.java](./src/main/java/com/rk/video1solid/dependencyinversion/utility/BluetoothKeyboard.java)
+
+```java
+// Low-level module - concrete implementation
+public class BluetoothKeyboard implements Keyboard {
+    private final String connectionType;
+    private final String company;
+    private final String modelVersion;
+    private final String color;
+
+    public BluetoothKeyboard(String connectionType, String company, String modelVersion, String color) {
+        this.connectionType = connectionType;
+        this.company = company;
+        this.modelVersion = modelVersion;
+        this.color = color;
+    }
+
+    public void getSpecifications() {
+        System.out.println("===> Bluetooth Keyboard");
+        System.out.println("Connection Type: " + connectionType);
+        System.out.println("Company: " + company);
+        System.out.println("Model Version: " + modelVersion);
+        System.out.println("Color: " + color);
+    }
+}
+```
+
+### Violation
+
+[MacBook.java](./src/main/java/com/rk/video1solid/dependencyinversion/violation/MacBook.java)
+
+```java
+// VIOLATION OF DIP
+// High-level module directly depending on low-level module
+public class MacBook {
+    private final WiredKeyboard keyboard;
+    private final WiredMouse mouse;
+
+    // Direct dependency on concrete class
+    public MacBook(WiredKeyboard wiredKeyboard, WiredMouse wiredMouse) {
+        keyboard = wiredKeyboard; // Tight coupling
+        mouse = wiredMouse; // Tight coupling
+    }
+
+    public Mouse getMouse() {
+        return mouse;
+    }
+
+    public Keyboard getKeyboard() {
+        return keyboard;
+    }
+}
+```
+
+### Solution
+
+[MacBook.java](./src/main/java/com/rk/video1solid/dependencyinversion/solution/MacBook.java)
+
+```java
+package com.rk.video1solid.dependencyinversion.solution;
+
+import com.rk.video1solid.dependencyinversion.utility.Keyboard;
+import com.rk.video1solid.dependencyinversion.utility.Mouse;
+
+// Following DIP
+// High-level module uses abstraction
+public class MacBook {
+    private final Keyboard keyboard;
+    private final Mouse mouse;
+
+    // Abstraction - defines contract
+    // Dependency injection through constructor
+    public MacBook(Mouse mouse, Keyboard keyboard) {
+        this.keyboard = keyboard; // Works with any kind of keyboard and mouse
+        this.mouse = mouse;
+    }
+
+    public Mouse getMouse() {
+        return mouse;
+    }
+
+    public Keyboard getKeyboard() {
+        return keyboard;
+    }
+}
+```

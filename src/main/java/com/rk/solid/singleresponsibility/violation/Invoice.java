@@ -1,4 +1,4 @@
-package com.rk.solid.singleresponsibility.problem;
+package com.rk.solid.singleresponsibility.violation;
 
 // BAD: This class violates SRP by having multiple responsibilities
 public class Invoice {
