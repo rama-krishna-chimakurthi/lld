@@ -1099,3 +1099,231 @@ public class SportsDrive implements DriveStrategy {
     }
 }
 ```
+
+# Observer Pattern
+
+> Design pattern where an Object(Observable or Publisher) maintains a list of dependents(observers)
+>
+> And Automatically notifies the when there is a change in it's state
+
+**Real Life applications**
+
+- Weather stations publishes weather updates to multiple devices
+- Social Media
+- Youtube Subscription
+- Stock market trackers
+
+## Models
+
+- **Push:** Observable pushes data
+- **Pull:** Observer holds Observer object reference, when it got to know that something is updated. It Pulls data
+
+## Push Model
+
+### UML
+
+```mermaid
+classDiagram
+    class Observable{
+        <<Interface>>
+        +add(Observer)
+        +remove(Observer)
+        +notify()
+        +setState()
+    }
+
+    class ConcreteObservable{
+        -List~Observer~ observers
+        -ObservableData data
+
+        +add(Observer) ...
+        +remove(Observer) ...
+        +notify() ...
+        +setState() ...
+    }
+
+    class Observer{
+        <<Interface>>
+        +update(ObservableData)
+    }
+    class ConcreteObserver{
+        +update(ObservableData)
+    }
+
+    Observable "1" --> "*" Observer : has-a
+    Observable <|-- ConcreteObservable : is-a
+    Observer <|-- ConcreteObserver : is-a
+```
+
+## Pull Model
+
+### UML
+
+```mermaid
+classDiagram
+    class Observable{
+        <<Interface>>
+        +add(Observer)
+        +remove(Observer)
+        +notify()
+        +setState()
+        +getState()
+    }
+
+    class ConcreteObservable{
+        -List~Observer~ observers
+        -ObservableData data
+
+        +add(Observer) ...
+        +remove(Observer) ...
+        +notify() ...
+        +setState() ...
+    }
+
+    class Observer{
+        <<Interface>>
+        +update()
+    }
+    class ConcreteObserver{
+        +update()
+    }
+
+    Observable "1" --> "*" Observer : has-a
+    Observable <|-- ConcreteObservable : is-a
+    Observer <|-- ConcreteObserver : is-a
+    ConcreteObserver --> ConcreteObservable :has-a
+
+```
+
+## Example
+
+**Observable**
+
+[WeatherObservable.java](./src/main/java/com/rk/behavioralpatterns/observer/weatherstation/observable/WeatherObservable.java)
+
+```java
+// Observable(Subject) interface
+// Defines methods for managing observers and notifying them of changes
+public interface WeatherObservable {
+
+    void addObserver(WeatherObserver observer);
+
+    void removeObserver(WeatherObserver observer);
+
+    void notifyObservers();
+
+    void setWeatherReadings(float temperature, float humidity, float pressure);
+}
+```
+
+[WeatherStation.java](./src/main/java/com/rk/behavioralpatterns/observer/weatherstation/observable/WeatherStation.java)
+
+```java
+// Concrete Observable (Subject)
+// WeatherStation - the concrete observable class that holds weather data
+public class WeatherStation implements WeatherObservable {
+    // List of observers registered for updates
+    private final List<WeatherObserver> observers;
+    // Observable Data
+    private float temperature;
+    private float humidity;
+    private float pressure;
+
+    public WeatherStation() {
+        observers = new ArrayList<>();
+    }
+
+    @Override
+    public void addObserver(WeatherObserver observer) {
+        observers.add(observer);
+        System.out.println("[+] Observer registered: " + observer.getClass().getSimpleName());
+    }
+
+    @Override
+    public void removeObserver(WeatherObserver observer) {
+        observers.remove(observer);
+        System.out.println("[-] Observer removed: " + observer.getClass().getSimpleName());
+    }
+
+    @Override
+    public void notifyObservers() {
+        for (WeatherObserver observer : observers) {
+            // Notify each observer about the change in weather data(state)
+            observer.update(); // Observer will update its state based on the new data and respond accordingly
+        }
+    }
+
+    // Method to update weather measurements
+    public void setWeatherReadings(float temperature, float humidity, float pressure) {
+        this.temperature = temperature;
+        this.humidity = humidity;
+        this.pressure = pressure;
+        notifyObservers();
+    }
+
+    // Getters for observers to access weather data
+    public float getTemperature() {
+        return temperature;
+    }
+
+    public float getHumidity() {
+        return humidity;
+    }
+
+    public float getPressure() {
+        return pressure;
+    }
+
+    @Override
+    public String toString() {
+        return "WeatherStation{" +
+                "temperature=" + temperature +
+                ", humidity=" + humidity +
+                ", pressure=" + pressure +
+                '}';
+    }
+}
+```
+
+**Observer**
+
+[WeatherObserver](./src/main/java/com/rk/behavioralpatterns/observer/weatherstation/observer/WeatherObserver.java)
+
+```java
+// Observer interface - defines the update method
+// Concrete observers implement this interface to update their state
+// and respond to changes in its OWN way
+public interface WeatherObserver {
+    void update();
+}
+```
+
+[CurrentConditionsDisplay](./src/main/java/com/rk/behavioralpatterns/observer/weatherstation/observer/CurrentConditionsDisplay.java)
+
+```java
+// Concrete Observer 1 - Current Conditions Display (on TV or Mobile)
+public class CurrentConditionsDisplay implements WeatherObserver {
+    private final WeatherObservable weatherStation;
+
+    public CurrentConditionsDisplay(WeatherObservable weatherStation) {
+        this.weatherStation = weatherStation;
+        weatherStation.addObserver(this);
+    }
+
+    // CurrentConditionsDisplay implements the update method in its own way
+    @Override
+    public void update() {
+        System.out.println("Saving weather data... ");
+        display();
+    }
+
+    // Display the current weather conditions
+    public void display() {
+        System.out.println("Current Weather Conditions: " + weatherStation.toString());
+    }
+}
+```
+
+## Points to remember
+
+- In Push model, Observable passes the data explicitly. where as in pull model, Observable just notifies and the Observers will fetch the data.
